@@ -1,0 +1,131 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage[utf8]{inputenc}
+
+\usepackage{listings}
+\usepackage{color}
+
+\NewDocumentCommand{\codeword}{v}{
+\texttt{\textcolor{black}{#1}}
+}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstset{frame=tb,
+  aboveskip=3mm,
+  belowskip=3mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\small\ttfamily},
+  numbers=none,
+  numberstyle=\tiny\color{gray},
+  keywordstyle=\color{blue},
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{mauve},
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=3
+}
+
+
+\title{Sprawozdanie nr. 6}
+\author{Mateusz Kojro}
+
+
+\date{2020–01–13}
+\begin{document}
+\maketitle
+
+\section{Opis cwiczenia}
+
+Cwiczenie polegalo na pomiarze temperatury oraz sterowaniu ukladami DS1820 za pomoca magistrali 1-wire
+Czujniki temperatury realizowane sa korzystajac z roznych zjawisk fizycznych (miedzy innymi odksztalcanie bimetali czy zmiany oporu materialu)
+Magistrala 1-wire (w naszym przypadku wykonana przez firme DALLAS) sluzy do przekazywania informacji pomiedzy
+ukladami "slave" a mikrokontrolerem. Jak sugeruje jej nazwa magistrala 1-wire sklada sie wylacznie z jednego przewodu
+nie liczac masy.
+
+Aby oddczytac temperature za pomoca magistrali 1-wire i czujnika temperatury nalezy wykonac ponizsze czynnosci
+
+\begin{enumerate}
+  \item Zerowanie magistrali
+  \item Wypisanie id czujnika
+  \item Wyslac komende pomiaru temperatury
+  \item Zatrzymac wykonywanie programu na maksymalny czas konwersji analogowych wartosci termometru na wartosci cyfrowe
+  \item Wyzerowac magistrale
+  \item Wyslac id czujnika
+  \item Wyslac komede odczytu temperatury
+  \item Odcztac temperature
+  \item Wyzerowac magistrale
+\end{enumerate}
+
+Przy czym nalezy pamietac ze temperatura zapisana jest w postaci 8bitowej liczby z znakiem (1 bit to bit znaku)
+i ze id czujnika musi zostac odcztane podczas pisania programu i zapisane do pamieci EPROM
+
+\section{Instrukcje jezyka BASCOM uzywane do komunikacji za pomoca magistrali 1-wire}
+
+\begin{itemize}
+  \item \codeword{1wreset} - resetowanie magistrali
+  \item \codeword{1write [value]} - wyslij \codeword{value} na magistrale
+  \item \codeword{1wread} - odczytaj wartosc z magistralii
+  \item \codeword{Writeeeprom} - Zapisz wartosc do pamieci EEPROM
+\end{itemize}
+
+\section{Elementy elektroniczne uzyte do realizacji ukladu}
+\begin{itemize}
+  \item Uklad DS1820
+  \item Wyswietlacz LCD
+\end{itemize}
+
+\section{Kod odczytujacy temperature za pomoca ukladu DS1820}
+
+\begin{lstlisting}[language=VBScript , caption=Kod odczytujacy temperature za pomoca ukladu DS1820]
+  $regfile = "m8def.dat"
+  $crystal = 8000000
+  Config Lcd = 16 * 2
+  Config 1wire = PORTB.0
+
+  Declare Sub read_temp
+  Dim temp(2) As Byte
+
+  DefLcdChar 0, 7, 5, 7, 32, 32, 32, 32, 32
+
+  Do
+    Call read_temp
+    Cls
+    If temp(2) = 0 Then
+      Lcd "Temp: " ; temp(1) ; Chr(0) ; "C"
+    Else
+      Lcd "Temp: -" ; temp(1) ; Chr(0) ; "C"
+    End If
+  Loop
+  End
+
+  Sub read_tempe
+    1wreset
+    1wwrite &hcc
+    1wwrite &h44
+    Waitms 750
+    1wreset
+    1wwrite &hcc
+    1wwrite &hbe
+    temp(2) = 1wread(2)
+    1wreset
+
+    If Err = 1 Then
+      Cls
+      Lcd "Blad"
+      Do
+      Loop
+    End If
+    If temp(2) > 0 Then
+      temp(1) = 256 - tem(1)
+    End If
+    temp(1) = temp(1)/2
+  End Sub
+\end{lstlisting}
+
+\end{document}

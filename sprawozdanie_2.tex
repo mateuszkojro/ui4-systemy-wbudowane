@@ -1,0 +1,149 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage[utf8]{inputenc}
+
+\usepackage{listings}
+\usepackage{color}
+
+\NewDocumentCommand{\codeword}{v}{
+\texttt{\textcolor{black}{#1}}
+}
+\NewDocumentCommand{\code}{v}{
+\texttt{\textcolor{black}{#1}}
+}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstset{frame=tb,
+  aboveskip=3mm,
+  belowskip=3mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\small\ttfamily},
+  numbers=none,
+  numberstyle=\tiny\color{gray},
+  keywordstyle=\color{blue},
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{mauve},
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=3
+}
+
+
+\title{Sprawozdanie nr. 2}
+\author{Mateusz Kojro}
+
+\date{2020–01–13}
+\begin{document}
+\maketitle
+
+\section{Opis cwiczenia}
+
+Celem tego cwiczenia jest poznanie sposobow uzywania i wykorzystanie licznika jako
+ukladu mierzacego czasu (Timer0) ale rowniez przyklad generowania sygnalu PWM (Timer1)
+Timery w mikrokontrolerze dzialaja w zasadzie licznikow. Wykorzystywany przez nas mikrokontroler
+posiada 2 rozne timery 8 i 16 bitowy sa one wiec w stanie odliczac odpowiednio do
+256 i 65 536 w rownych odstepach czasu. Posiadajac taki timer jestesmy w stanie
+wygenerowac sygnal PWM (Pulse width modulation) ktory dziala na zasadzie 
+generowania przebiegu prostokatnego o zmiennych dlugosciach wysylania 0 i 1
+sygnal taki umozliwia np. stopniowe przyciemnianie diody LED
+
+\section{Wykorzystane polecenia jezyka BASCOM}
+\begin{itemize}
+  \item \code{Config Timer0} - Konfiguracja pracy Timer0
+  \item \code{Start | Stop} - Umozliwia zatrzymanie i wystartowanie licznika
+  \item \code{Counter0 = value} - Ustawia poczatkowa wartosc licznika
+  \item \code{Load Timer0 number} - Wartosc po ktore licznik sie przepelni
+  \item \code{On Interupt} - Konfiguruje dzialania wykonywane podczas ogloszenia przerwania
+  \item \code{Enable | Disable Interupt} - Ustawienie zglaszania przerwan podczas pracy mikrokontrolera
+\end{itemize}
+
+\section{Wykorzystywane przyrzady}
+\begin{itemize}
+  \item Oscyloskop cyfrowy
+\end{itemize}
+
+\section{Przeprowadzone doswiadczenia}
+
+Gdy dokonalismy pomiaru okresu przerwan wbudowanego timera teoretycznie ustawionego 
+na okers 1 sekundy otrzymalismy okres zmierzony za pomoca oscyloskopu rowny 
+968ms. Jak latwo obliczyc w skali roku skonstruowany w ten sposob zegar mylil by sie o ponad 
+11 dni. Aby otrzymac wyniki blizsze prawdy nalezy wykorzystac zewnetrzny rezonator kwarcowy.
+
+\begin{lstlisting}[language=VBScript , caption=Program odmierzajacy 1s]
+  $regfile = "m8def.dat"
+  $crystal = 8000000	
+
+  Config Pinb.0 = Output
+  Config Timer0 = TIMER, Prescale = 256
+  256
+  
+  On Timer0 Odmierz_1s
+  
+  Dim Licz_8ms As Byte
+  
+  Enable Interrupts
+  Enable Timer0	
+  Load Timer0 = 250
+  
+  Do
+  Loop
+  End
+  
+  Odmierz_1s:
+        Load Timer0 =250
+        Incr Licz_8ms
+        If Licz_8ms = 125 Then
+           Licz_8ms = 0
+           Toggle Portb.0
+        End If
+  Return
+\end{lstlisting}
+
+Aby wygenerowac sygnal PWM o czestotliwosci 7.82 kHz i wypelnionego w 60\%
+
+Czestotliwosc:
+\begin{equation}
+  \begin{split}
+    F_c = \frac{\frac{8 * 10^6 Hz}{1}}{1022} = 0.00782 * 10^6 Hz = 7.82 KHz \\
+  \end{split}
+\end{equation}
+
+Wypelnienie:
+\begin{equation}
+    k_w = 6 * x = 306.6
+\end{equation}
+
+\begin{equation}
+  \begin{split}
+    511 &\leftrightarrow 100\% \\
+    x &\leftrightarrow 10\% 
+  \end{split}
+\end{equation}
+
+mamy wiec:
+
+\begin{equation}
+  x = 511 * \frac{10}{100} = 51.1
+\end{equation}
+
+
+\begin{lstlisting}[language=VBScript , caption=Kod programu generujacego sygnal PWM]
+  $regfile = "m8def.dat"
+  $crystal = 8000000	
+  Config Pinb.1 = output
+  Config Timer1 = PWM,            
+  PWM = 8, 
+  Compare A PWM = Clear Up, 
+  Compare B PWM = Disconnect, 
+  Prescale = 256
+  PWM1a = 127.5
+  End
+\end{lstlisting}
+
+\end{document}

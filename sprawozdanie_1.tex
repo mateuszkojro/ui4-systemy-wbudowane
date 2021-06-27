@@ -1,0 +1,77 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage[utf8]{inputenc}
+
+\usepackage{listings}
+\usepackage{color}
+
+\NewDocumentCommand{\codeword}{v}{
+\texttt{\textcolor{black}{#1}}
+}
+\NewDocumentCommand{\code}{v}{
+\texttt{\textcolor{black}{#1}}
+}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstset{frame=tb,
+  aboveskip=3mm,
+  belowskip=3mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\small\ttfamily},
+  numbers=none,
+  numberstyle=\tiny\color{gray},
+  keywordstyle=\color{blue},
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{mauve},
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=3
+}
+
+
+\title{Sprawozdanie nr. 1}
+\author{Mateusz Kojro}
+
+\date{2020–01–13}
+\begin{document}
+\maketitle
+
+\section{Opis cwiczenia}
+  Celem cwiczenia jest porownanie czasu wykonywania instrukcji w jezyku programowania BASCOM
+  policzymy rowniez ilosc cykli pracy mikrokontrolera przypadajacych na instrukcje.
+  Porownamy nastepnie te wyniki z wynikami dla programow napisancyh w ASSEMBLERZE 
+
+
+
+\section{Wykorzystane polecenia jezyka BASCOM}
+
+\begin{itemize}
+\item \code{$regfile = ”m8def.dat”} - informacja o stosowanych dyrektywach mikrokontrolera
+\item \code{$crystal = 8000000} - informacja dla kompilatora o czestotliwosci zegara kontrolera 
+\item \code{CONFIG PINB.0 = Output} - Ustaw PB0 jako linie wejsciowa
+\item \code{Do} - Poczatek petli programu
+\item \code{SET} - Ustaw wartosc na porcie 1
+\item \code{RESET} - Ustaw wartosc na porcie na 0
+\item \code{TOGGLE} - zamien 1 na 0 i 0 na 1
+\item \code{ROTATE PORTB.LEFT} - przesun wartosci w \code{PORTB} w lewo
+\item \code{WAITMS 200} - opoznij dzialanie programu o 200ms
+\item \code{LOOP} - Koniec glownej petli programu
+\item \code{END} - Koniec programu 
+\end{itemize}
+
+\section{Wykorzystywane przyrzady}
+\begin{itemize}
+  \item Oscyloskop cyforwy
+\end{itemize}
+
+\begin{lstlisting}[language=VBScript , caption=Kod programu generujacego sygnal PWM]
+
+\end{lstlisting}
+
+\end{document}

@@ -1,0 +1,173 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage[utf8]{inputenc}
+
+\usepackage{listings}
+\usepackage{color}
+
+\NewDocumentCommand{\codeword}{v}{%
+\texttt{\textcolor{black}{#1}}%
+}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstset{frame=tb,
+  aboveskip=3mm,
+  belowskip=3mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\small\ttfamily},
+  numbers=none,
+  numberstyle=\tiny\color{gray},
+  keywordstyle=\color{blue},
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{mauve},
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=3
+}
+
+
+\title{Sprawozdanie nr. 8}
+\author{Mateusz Kojro}
+
+
+\date{2020–01–13}
+\begin{document}
+\maketitle
+
+
+\section{Opis cwiczenia}
+
+Cwiczenie ma na celu poznanie metod pozwalajacych na nadawanie i odbieranie sygnalow za pomoca tzw. Podczerwieni
+(Fale elektromagnetyczne o dlugosci fali wiekszej od swiatla widzialnego) za pomoca diod LED. 
+Podczas cwiczena wykorzystywac bedziemy ukladu scalonego odbiornika podczerwieni wewnatrz takiego ukladu 
+znajduja sie elementy odbierajace filtrujace i dekodujace sygnaly. Wiekszoc transmisji odbywajacych sie w podczerwieni wykorzystuje tzw kod RC5 lub kod NEC
+
+\subsection{Kod RC5}
+
+Kod RC5 sklada sie z 14 bitowych slow danych (1 bit trwa 1.778ms) zakodowanych w kodzie Manchester. Slowo w kodzie Manchester sklada sie z;
+
+\begin{center}
+  \begin{tabular}{ |c|c|c|c| } 
+  \hline
+  Sygnal startu & Bit kontrolny & Adres urzadzenia & Komenda   \\
+  \hline
+  2 Bity & 1 Bit & 5 Bitow & 6 Bitow\\ 
+  \hline
+  \end{tabular}
+\end{center}
+
+Calkowity czas przeslania takiej ramki wynosi $ 24.889ms $
+
+\subsection{Kod NEC}
+
+Innym stosowanym protokolem jest tzw protokol NEC w ktorym wykorzytsuje sie odleglosci impulsow Bitow
+Logiczne 1 trwa $2.25ms$ natomiast logiczne 0 trwa $1.125ms$ i sklada sie z:
+
+\begin{center}
+  \begin{tabular}{ |c|c| } 
+  \hline
+  Adres & Polecenie \\
+  \hline
+  8 Bitow & 8 Bitow \\ 
+  \hline
+  \end{tabular}
+\end{center}
+
+Przy tym zarowno adres jak i polecenie przesylane jest 2 razy.
+
+\section{Instrukcje jezyka BASCOM wykorzystywane podczas pracy z sygnalami w podczerwieni}
+
+\begin{itemize}
+  \item \codeword{Config Int0 = Low Level} - konfiguruje przerwania wywolane logicznym 0 na wejsciu \codeword{Int0}
+  \item \codeword{Config Rc5 = Pind.2} - Konfiguracja lini odbiornika podczerwieni
+  \item \codeword{Getrc5 (adress, command)} - pobierz adres i komende odebrana przez odbiornik podczerwieni
+  \item \codeword{Debounce [button], 0, program, Sub} - unikajac zaklocen jezeli nacisnieto \codeword{button} wykonaj polecenie
+  \item \codeword{Rc5send [toggle_bit], [address], [command] } - wyslanie wartosci zapisanych w zmiennych command i adress
+\end{itemize}
+
+\section{Wykorzystane komponenty}
+\begin{itemize}
+  \item odbiornik podczerwieni
+  \item Pilot (np. od telewizora)
+  \item Odbiornik VS1838
+  \item Nadajnik IR w kodzie NEC
+\end{itemize}
+
+\section{Przykładowe kody źródłowe}
+
+\begin{lstlisting}[language=VBScript , caption=Kod odbierajacy sygnal w kodzie RC5]
+  $regfile = "m8def.dat"
+  $crystal = 8000000
+  Config Lcd = 16 * 2
+  Config INT0 = Low Level
+  Config Rc5 = PIND.2
+  Dim addr As Byte, cmd As Byte
+  Dim recived As Bit
+
+  Set recived
+
+  Do 
+    If recived = 1 Then
+      Cls
+      Lcd "Addr: " ; addr
+      Lowerline
+      Lcd "Cmd: " ; cmd
+      Reset recived
+      Enable INT0
+    End If
+  Loop
+  End
+\end{lstlisting}
+
+
+\begin{lstlisting}[language=VBScript , caption=Kod wysylajacy sygnal (przez podczerwien) w kodzie RC5 RC6 i Sony]
+  S2 Alias PINC . 2
+  S3 Alias PINC . 0
+  Do
+    Debounce S1, 0, Rc5, Sub
+    Debounce S2, 0, Rc6, Sub
+    Debounce S3, 0, Sony, Sub   
+  Loop
+  End
+
+  Rc5:
+    Command = 12
+    Togbit = 0
+    Adress = 0
+
+    Do
+      Rc5send Togbit, Address, Command
+      Waitms 250
+    Loop Untill S1 = 1
+  Return
+
+  Rc6:
+    Command = 12
+    Togbit = 0
+    Adress = 0
+
+    Do
+      Rc6send Togbit, Address, Command
+      Waitms 250
+    Loop Untill S1 = 1
+  Return
+
+  Sony:
+    Command = 12
+    Togbit = 0
+    Adress = 0
+
+    Do
+      Sonysend Togbit, Address, Command
+      Waitms 250
+    Loop Untill S1 = 1
+  Return
+\end{lstlisting}
+
+\end{document}

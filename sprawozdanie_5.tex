@@ -1,0 +1,136 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage[utf8]{inputenc}
+
+\usepackage{listings}
+\usepackage{color}
+
+\NewDocumentCommand{\codeword}{v}{
+\texttt{\textcolor{black}{#1}}
+}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstset{frame=tb,
+  aboveskip=3mm,
+  belowskip=3mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\small\ttfamily},
+  numbers=none,
+  numberstyle=\tiny\color{gray},
+  keywordstyle=\color{blue},
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{mauve},
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=3
+}
+
+
+\title{Sprawozdanie nr. 5}
+\author{Mateusz Kojro}
+
+
+\date{2020–01–13}
+\begin{document}
+\maketitle
+
+\section{Opis cwiczenia}
+
+Cwiczenie polega na projekcie konstrukcji prostego ukladu zegara opartego na 
+przerwaniach zglaszanych podczas przepelnienia wbudowanego timera 
+
+\section{Funkjce jezyka BASCOM potrzebne do implementacji zegara}
+
+\begin{itemize}
+  \item \codeword{Makebcd(value)} - przeksztalca \codeword{value} na wartosc w 2 cyforwym kdzoie BCD
+  \item \codeword{Config Clock = Soft | User [, Gosub [Sectick] ] }: 
+    \begin{itemize}
+      \item \codeword{Soft} - Zliczanie odbywa sie automatycznie
+      \item \codeword{User} - Zliczanie odbywa sie za pomoca zdefiniowanej przez uzytkownika funkcji
+      \item \codeword{Gosub = Sectick} - Umozliwia automatyczne uruchamianie funkcji Settic w jednakowych odstepach czasu
+    \end{itemize}
+  \item \codeword{Config Date = Dmy | Mdy | Ymd , Separator = znak} - Wybiera uzywany fromat daty (D - dzien, M - miesiac, Y - rok)
+  \codeword{znak} - znak oddzielajacy poszczegolne daty do wyboru - '/', '-', '.' 
+\end{itemize}
+
+\section{Wykorystywane elementy elektroniczne}
+\begin{itemize}
+  \item Guziki
+  \item Wyswietlacz LCD
+  \item Mikrokontroler z timerem asynchroniczym
+\end{itemize}
+
+
+\section{Kod zrodlowy implementujacy program zegara}
+
+
+\begin{lstlisting}[language=VBScript , caption=Implementacja zegara oparteg ona przerwaniach]
+  $regfile = "m8def.dat"
+  $crystal = 8000000
+  Config Lcd = 16 * 2
+
+  Config PINB.1 = Input
+  Config PINB.2 = Input
+
+  Config Timer1 = Timer, Prescale = 256
+
+  Declare Sub showtime
+  On Timer1 count1s
+
+  Dim S As Byte
+  Dim M As Byte
+  Dim H As Byte
+  Dim new As Byte
+  Dim bcd As Byte
+
+  S1 Alias PINB.2
+  S2 Alias PINB.1
+
+
+  Enable Interupts 
+  Enable Timer1
+  Counter1 = 34286
+
+  Set new 
+  Set PORTB.1
+  Set PORTB.2
+
+  Do
+    Call showtime
+    If S1 = o Then
+      Waitms 25
+      If s1 = 0 Then
+        Incr M
+        S = 0
+        if M = 60 Then
+          M = 0
+        End If
+        Set new
+        Call showtime
+      End If
+    End If
+    If S2 = 0 Then
+      Waitms 25
+        If S2 = 0 Then
+          Incr H
+          if H = 24 Then
+            H = 0
+          End If
+          Set new
+          Call showtime
+          Waitms 200
+        End If
+    End If
+  Loop
+  End
+\end{lstlisting}
+
+
+
+\end{document}

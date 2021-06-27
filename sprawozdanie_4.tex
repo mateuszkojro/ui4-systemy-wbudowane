@@ -1,0 +1,188 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage[utf8]{inputenc}
+
+\usepackage{listings}
+\usepackage{color}
+
+\NewDocumentCommand{\codeword}{v}{
+\texttt{\textcolor{black}{#1}}
+}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstset{frame=tb,
+  aboveskip=3mm,
+  belowskip=3mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\small\ttfamily},
+  numbers=none,
+  numberstyle=\tiny\color{gray},
+  keywordstyle=\color{blue},
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{mauve},
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=3
+}
+
+
+\title{Sprawozdanie nr. 4}
+\author{Mateusz Kojro}
+
+
+
+\date{2020–01–13}
+\begin{document}
+\maketitle
+
+\section{Opis cwiczenia}
+
+Celem cwiczenia jest zaznajomienie z dostepnymi mozliwosciami odbierania danych wejsciowych od uzytkownika
+Do mikrokontrolera mozemy podlaczyc guziki na sposoby
+
+\begin{itemize}
+  \item Bezposrednio do polaczen mikrokontrolera
+  \item Matrycowo za pomoca odpowiedniego multipleksera - umozliwia podlaczenie wiekszej ilosci guzikow do tej samej liczby wejsc mikrokontrolera
+\end{itemize}
+
+\section{Intrukcje jezyka BASCOM wymagane do obslugi przyciskow}
+
+\begin{itemize}
+  \item \codeword{Debounce} - Uruchamia dany kod po nacisnieciu przycisku
+  \item \codeword{Getatkbd()} - pobiera kod z klawiatury i odczytuje jego wartosci ASCII z predeklarowanej tablicy 
+\end{itemize}
+
+\section{Wykorzystane elementy elektroniczne}
+
+\begin{itemize}
+  \item Diody LED
+  \item Przyciski
+  \item Wyswietlacz LCD
+\end{itemize}
+
+
+\section{Przykladowe implementacje}
+
+
+\begin{lstlisting}[language=VBScript , caption=Obsluga 2 przyciskow za pomoca Debounce]
+  $regfile = "m8def.dat"
+  $crystal = 8000000
+  Config Lcd = 16 * 2
+
+  Config PINB.1 = Input
+  Config PINB.2 = Input
+  Config PINB.3 = Output
+  Config PINB.4 = Output
+
+  S1 Alias PINB.2
+  S2 Alias PINB.1
+
+  Led1 Alias PINB.5
+  Led2 Alias PINB.4
+
+  Set PORTB.1
+  Set PORTB.2
+
+  Do
+    Debounce S1, 0, Prog1, Sub
+    Debounce S2, 0, Prog2, Sub
+  Loop
+:
+  Prog1:
+    Toggle Led1
+  Return
+
+  Prog1:
+    Toggle Led1
+  Return
+\end{lstlisting}
+
+
+\begin{lstlisting}[language=VBScript , caption=Obsluga klawiatury matrycowej]
+  $regfile = "m8def.dat"
+  $crystal = 8000000
+  
+  Config PINB.0 = Input
+  Config PINB.1 = Input
+  
+  Config PINB.2 = Output
+  Config PINB.3 = Output
+  
+  Config Lcd = 16*2
+  Config Timer0 = Timer , Prescale = 1024 
+  
+  On Timer0=multiplex
+  
+  Dim t1 As Byte 
+  Dim t2 As Byte 
+  
+  Dim button As Byte 
+  Dim i As Byte 
+  
+  row1 Alias PINB.0
+  row2 Alias PINB.1
+  
+  k1 Alias PINB.2
+  k2 Alias PINB.3
+  
+  Enable Interrupts
+  Enable Timer0
+  La Timer0, 200
+  
+  Set PORTB.0
+  Set PORTB.1
+  Set k1
+  Set k2
+  
+  Do
+      Cls
+      Lcd button
+      Waitms 200
+  Loop
+  End
+  
+  multiplex:
+      Load Timer0, 200
+      For i = 1 To 2
+         If i = 1 Then
+             Reset k1
+         Else 
+             Set k1
+             Reset k2
+         End If
+         If row1 = 0 Or row2 = 0 Then
+             t1 = PINB And &B00000011
+             Exit For
+         Else
+             T1=0
+         End If 
+      Next i
+      IF t2 = t1 Then
+          button = t1
+          IF i=2 Then 
+              button = button + 2
+          End IF
+      Else 
+         t2 = t1
+      End IF
+  
+      Set k1
+      Ser k2 
+  Return
+\end{lstlisting}
+
+
+\section{Podsumowanie}
+
+Przyjmowanie infromacji od uzytkownika jest jednym z podstawwowych wymagan aby budowane uklady znalazly zastosowanie
+w rzeczywistych sytuacjach dlatego tez bardzo wazna jest umiejetnosc laczenia ich zarowno bezposrednio
+dla malej ilosci guzikow jak i posrednio przez klawiatury matrycowe przy wiekszych ilosciach potrzebnych guzikow
+
+\end{document}
+

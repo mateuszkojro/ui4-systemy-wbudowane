@@ -1,0 +1,181 @@
+
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage[utf8]{inputenc}
+
+\usepackage{listings}
+\usepackage{color}
+
+\NewDocumentCommand{\codeword}{v}{
+\texttt{\textcolor{black}{#1}}
+}
+\NewDocumentCommand{\code}{v}{
+\texttt{\textcolor{black}{#1}}
+}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstset{frame=tb,
+  aboveskip=3mm,
+  belowskip=3mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\small\ttfamily},
+  numbers=none,
+  numberstyle=\tiny\color{gray},
+  keywordstyle=\color{blue},
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{mauve},
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=3
+}
+
+
+\title{Sprawozdanie nr. 3}
+\author{Mateusz Kojro}
+
+
+
+\date{2020–01–13}
+\begin{document}
+\maketitle
+
+  \section{Opis cwiczenia}
+  Cwiczenie ma na celu zaznajomienie z metodami wyswietlania danych za pomoca 7 segmentowych wyswietlaczy LED
+  jak i alfanumerycznymi wyswietlaczami LCD.
+  Wyswietlacze LED moga byc sterowane zarowno pojedynczo jak i w sposob multipleksowany.
+
+  \section{Polecenia jezyka BASCOM potrzebne podczas sterowania wyswietlaczami}
+    \begin{itemize}
+      \item \codeword{Enable value} - odblokowuje \code{value} gdzie \code{value} to Interupts lub Timer
+        odblokowujac odpowiednio system perzerwan i wbudowany timer
+      \item \code{Config Lcd = 16 * 2} - Ustawia liczbe wierszy i koumn w obslugiwanym wyswietlaczu;
+      \item \code{Cls} - czysci zawartosc ekranu LCD
+      \item \code{lcd text} - wyswietla zawartosc text na ekranie
+      \item \code{Lowerline} - przejdz do wyswietlania kolejnej lini
+      \item \code{Shiftlcd Right | Left} - Przesun tekst na wyswietlaczu w prawo lub w lewo
+      \item \code{Locate x, y} - ustaw pozycje kursora na x, y
+      \item \code{Shiftcursor Right | Left} - Przesun kursor w prawo lub w lewo
+      \item \code{Display Off | On} - Uruchom lub wylacz wyswietlacz
+    \end{itemize}
+  \section{Elementy elektroniczne wykorzystywane podczas cwiczenia}
+
+  \begin{itemize}
+    \item 4 wyswietlacze 7 segmentowe LED
+    \item Wyswietlacz LCD
+    \item Uklad mocy ULN2803A
+  \end{itemize}
+
+  \section{Przykladowe programy}
+
+\begin{lstlisting}[language=VBScript , caption=Obsluga klawiatury matrycowej]
+  $regfile = "m8def.dat"
+  $crystal = 8000000
+  
+  Config portd =Output
+  Config pinb.0=Output
+  Config pinb.1=Output
+  Config pinb.2=Output
+  Config pinb.3=Output
+  Config Timer0 = Timer , Prescale = 256
+  
+  Declare Sub Pobr_znaku(cyfra As Byte)
+  On Timer0 Mult_wysw
+  
+  Dim A As Byte , B As Byte , C As Byte , D As Byte
+  Dim Ia As Byte, Ib As Byte, Ic as Byte, Id as Byte
+  
+  Dim Nr_wysw As Byte
+  Dim I As Byte
+  W1 Alias PORTB.0
+  W2 Alias PORTB.1
+  W3 Alias PORTB.2
+  W4 Alias PORTB.3
+  
+  Enable Interrupts
+  Enable Timer0
+  Load Timer0 , 125
+  
+  Do
+  A=9 : B=9 : C=9 : D=9
+  
+  FOR Ia=9 to 0 Step -1
+  A=Ia
+  
+     FOR Ib=9 to 0 Step -1
+    `B=Ib
+  
+        FOR Ic=9 to 0 Step -1
+        C=Ic
+  
+           FOR Id=9 to 0 Step -1
+           D=Id
+           wait 1
+           Next Id
+           Next Ic
+           Next Ib
+           Next Ia
+  
+  A=&B01001001 : B=&B10000110 : C=&B11000111 : D=&B11000000
+  wait 5
+  A=9 : B=9 : C=9 : D=9
+  
+  Loop
+  
+  End
+  
+  Sub Pobr_znaku(cyfra As Byte)
+     If Cyfra <10 Then
+        Portd = Lookup(cyfra , Kody7seg)
+     Else
+        portd = 0
+     End If
+  End Sub
+  
+  Mult_wysw:
+     Load Timer0 , 125
+     Set W1
+     Set W2
+     Set W3
+     Set W4
+     Select Case Nr_wysw
+  
+       Case 0:
+        Call Pobr_znaku(a)
+         Reset W1
+       Case 1:
+        Call Pobr_znaku(b)
+        Reset W2
+       Case 2:
+        Call Pobr_znaku(c)
+        Reset W3
+       Case 3:
+        Call Pobr_znaku(d)
+        Reset W4
+     End Select
+     Incr Nr_wysw
+  
+     If Nr_wysw = 4 Then
+        Nr_wysw = 0
+     End If
+  Return
+  
+  Kody7seg:
+  Data &B11000000 , &B11111001 , &B10100100 , &B10110000 , &B10011001
+  Data &B10010010 , &B10000010 , &B11111000 , &B10000000 , &B10010000
+  Data &B10001001 , &B11000000 , &B11000111 , &B10000110
+\end{lstlisting}
+
+\section{Podsumowanie}
+
+ Podczas konstruowania ukladow opartych na  mikrokontrolerach 2 glowne sposoby wyswietlania informacji
+ to wyswietlacze 7 segmentowe oparte (umozliwiaja wyswietlenie cyfr i niektorych lter) lub wyswietlacze LCD ktore umozliwiaja
+ natomisat wyswietlenie szerokiego zakresu symboli i liter lacznie z mozliwoscia tworzenia personalizowanych
+
+
+\end{document}
