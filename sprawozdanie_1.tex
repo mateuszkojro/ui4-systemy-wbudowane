@@ -38,7 +38,7 @@
 \title{Sprawozdanie nr. 1}
 \author{Mateusz Kojro}
 
-\date{2020–01–13}
+\date{}
 \begin{document}
 \maketitle
 
@@ -70,8 +70,80 @@
   \item Oscyloskop cyforwy
 \end{itemize}
 
-\begin{lstlisting}[language=VBScript , caption=Kod programu generujacego sygnal PWM]
-
+\begin{lstlisting}[language=VBScript , caption=Instrukcje Set i Reset]
+  $regfile = "m8def.dat"
+  $crystal  =  8000000  
+  
+  Config PINB.0  =  Output
+  Do
+    Set Portb.0
+    Reset PORTB.0
+  Loop
+  End     
 \end{lstlisting}
+
+\begin{lstlisting}[language=VBScript , caption=Instrukcje Toggle]
+  $regfile = "m8def.dat"
+  $crystal  =  8000000
+  Config PINB.0  =  Output
+  Do                                    
+    Tooggle PINB.0
+  Loop
+  End 
+\end{lstlisting}
+
+Dla programow napisanych w jezyku programowania BASCOM uzywajac symulatora mozemy odczytac ilosc taktow zegara jaka byla wymagana dla wykoanania danej instrukcji (dla polecenia \code{Toggle} sa to 4 cykle a \code{Reset} i \code{Set} zajmuja 2 takty zegara kazda) mierzac czasy wykonania obu implementacji otrzymujemy:
+
+Dla polecen \code{Set} i \code{Reset}:
+
+\begin{equation}
+  \begin{split}
+    T &= 252 ns + 500 ns = 752 ns,\\
+    f &= \frac{1}{T} = \frac{1}{752ns} = 1,3297MHz
+  \end{split}
+\end{equation}
+
+Dla polecenia \code{Toggle} natomiast:
+
+\begin{equation}
+  \begin{split}
+    T &= 744ns + 744ns  = 1488ns,\\
+    f &= \frac{1}{T} = \frac{1}{1488ns} = 0,62720MHz
+  \end{split}
+\end{equation}
+
+
+
+
+\begin{lstlisting}[language=VBScript , caption=Implementacja w assemblerze]
+  .nolist
+  .include"m8def.inc"
+  ldi r16, 0b00000001
+  out ddrb, r16
+  ldi r17, 0b00000000
+      loop:
+          out portb,r16
+          out portb,r17
+      rjmp loop
+  .exit
+\end{lstlisting}
+
+Pomiary dla programu napisanego za pomoca assemblera mozemy niestety odczytac tylko za pomoca oscyloskopu cyfrowego
+
+mozemy wtedy zaobserwowac ze czas trwania logicznej $1$ wynosi $128ns$ natomiast logicznego $0$ $360ns$
+
+\begin{equation}
+  T = 128ns + 360ns = 480ns
+\end{equation}
+
+
+\begin{equation}
+  f = \frac{1}{T} = \frac{1}{488ns} = 2.05MHz
+\end{equation}
+
+
+\section{Podsumowanie}
+
+Jak bardzo latwo zauwazyc analizujac otrzymane wyniki najwolniejsza z dostepnych dla nas opcji jest instrukcja \code{Toggle} wbudowana w jezyk BASCOM najszybsza metoda jest natomiast napisanie programu w czytstym Assemblerze. Musimy wiec balansowac poziom skompliowania programu i jego predkosc jego dzialania.
 
 \end{document}
